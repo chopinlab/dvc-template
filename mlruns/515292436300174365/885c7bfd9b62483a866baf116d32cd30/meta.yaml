@@ -1,0 +1,14 @@
+artifact_uri: file:///home/chopinsmith/workspace-robos/dvc/mlruns/515292436300174365/885c7bfd9b62483a866baf116d32cd30/artifacts
+end_time: 1754938177087
+entry_point_name: ''
+experiment_id: '515292436300174365'
+lifecycle_stage: active
+run_id: 885c7bfd9b62483a866baf116d32cd30
+run_name: model_evaluation_20250812_034934
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754938174914
+status: 3
+tags: []
+user_id: chopinsmith

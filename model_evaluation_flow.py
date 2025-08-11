@@ -62,14 +62,35 @@ def prepare_data(df: pd.DataFrame):
     return X_train, X_test, y_train, y_test
 
 @task
-def load_or_create_model(X_train, y_train):
-    """Load existing model or create a simple one for evaluation"""
-    # For demo purposes, create a simple model
-    # In real scenario, you'd load a pre-trained model
+def load_or_create_model(X_train=None, y_train=None, model_name: str = "RandomForestEvaluationModel", model_version: str = "latest", force_retrain: bool = False):
+    """Load existing model from MLflow Registry or create a new one if not found"""
+    
+    if not force_retrain:
+        # First check if model exists in registry
+        try:
+            import mlflow.tracking
+            client = mlflow.tracking.MlflowClient()
+            client.get_registered_model(model_name)
+            
+            # Model exists, try to load it
+            model_uri = f"models:/{model_name}/{model_version}"
+            model = mlflow.sklearn.load_model(model_uri)
+            print(f"✅ Loaded model '{model_name}' version '{model_version}' from MLflow Registry")
+            return model, False  # False = not newly trained
+            
+        except Exception as e:
+            print(f"Model not found in registry: {e}")
+    
+    print("🔧 Creating and training a new model...")
+    
+    # Create and train new model
+    if X_train is None or y_train is None:
+        raise ValueError("Training data required when model not found in registry")
+    
     model = RandomForestClassifier(n_estimators=100, random_state=42)
     model.fit(X_train, y_train)
-    print("Created and trained RandomForest model")
-    return model
+    print("✅ Created and trained new RandomForest model")
+    return model, True  # True = newly trained
 
 @task
 def evaluate_model(model, X_test, y_test):
@@ -96,8 +117,8 @@ def evaluate_model(model, X_test, y_test):
     return metrics
 
 @task
-def log_to_mlflow(model, metrics: dict, dataset_info: dict):
-    """Log model and metrics to MLflow"""
+def log_to_mlflow(model, metrics: dict, dataset_info: dict, is_newly_trained: bool = False):
+    """Log evaluation results and optionally register new model to MLflow"""
     
     # Create or get experiment
     experiment_name = "model_evaluation_experiment"
@@ -111,13 +132,29 @@ def log_to_mlflow(model, metrics: dict, dataset_info: dict):
         mlflow.log_param("model_type", "RandomForestClassifier")
         mlflow.log_param("dataset_shape", dataset_info["shape"])
         mlflow.log_param("evaluation_date", datetime.now().isoformat())
+        mlflow.log_param("is_newly_trained", is_newly_trained)
         
         # Log metrics
         for metric_name, metric_value in metrics.items():
             mlflow.log_metric(metric_name, metric_value)
         
-        # Log model
-        mlflow.sklearn.log_model(model, "model")
+        # Only register model if it was newly trained
+        if is_newly_trained:
+            # Log model
+            model_info = mlflow.sklearn.log_model(model, "model")
+            
+            # Register model in Model Registry
+            model_name = "RandomForestEvaluationModel"
+            try:
+                mlflow.register_model(
+                    model_uri=model_info.model_uri,
+                    name=model_name
+                )
+                print(f"New model registered as '{model_name}' in Model Registry")
+            except Exception as e:
+                print(f"Model registration failed: {e}")
+        else:
+            print("Using existing model from registry - no new registration needed")
         
         # Get current run info
         run = mlflow.active_run()
@@ -145,14 +182,14 @@ def model_evaluation_pipeline(dataset_url: str | None = None):
     # Prepare data
     X_train, X_test, y_train, y_test = prepare_data(df)
     
-    # Load/create model
-    model = load_or_create_model(X_train, y_train)
+    # Load/create model (try to load from registry first)
+    model, is_newly_trained = load_or_create_model(X_train, y_train)
     
     # Evaluate model
     metrics = evaluate_model(model, X_test, y_test)
     
     # Log to MLflow
-    run_id = log_to_mlflow(model, metrics, dataset_info)
+    run_id = log_to_mlflow(model, metrics, dataset_info, is_newly_trained)
     
     print("✅ Model Evaluation Pipeline completed successfully!")
     return {

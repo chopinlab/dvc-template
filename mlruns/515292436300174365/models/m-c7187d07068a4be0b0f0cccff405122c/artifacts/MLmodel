@@ -1,0 +1,22 @@
+artifact_path: file:///home/chopinsmith/workspace-robos/dvc/mlruns/515292436300174365/models/m-c7187d07068a4be0b0f0cccff405122c/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.13.5
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.1
+mlflow_version: 3.2.0
+model_id: m-c7187d07068a4be0b0f0cccff405122c
+model_size_bytes: 1033167
+model_uuid: m-c7187d07068a4be0b0f0cccff405122c
+prompts: null
+run_id: 161d0fafb9b740388ee15413c87597d5
+utc_time_created: '2025-08-11 18:43:07.437050'
