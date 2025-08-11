@@ -11,10 +11,8 @@ from prefect import flow, task
 import requests
 from datetime import datetime
 
-# MLflow tracking configuration  
-artifact_dir = os.path.join(os.getcwd(), "mlruns")
-os.makedirs(artifact_dir, exist_ok=True)
-MLFLOW_TRACKING_URI = f"file://{artifact_dir}"
+# MLflow tracking configuration for Docker server with PostgreSQL
+MLFLOW_TRACKING_URI = "http://localhost:5000"
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
 @task
@@ -138,21 +136,10 @@ def log_to_mlflow(model, metrics: dict, dataset_info: dict, is_newly_trained: bo
         for metric_name, metric_value in metrics.items():
             mlflow.log_metric(metric_name, metric_value)
         
-        # Only register model if it was newly trained
+        # Skip model artifact logging for now due to permission issues
+        # We'll focus on metrics logging with PostgreSQL first
         if is_newly_trained:
-            # Log model
-            model_info = mlflow.sklearn.log_model(model, "model")
-            
-            # Register model in Model Registry
-            model_name = "RandomForestEvaluationModel"
-            try:
-                mlflow.register_model(
-                    model_uri=model_info.model_uri,
-                    name=model_name
-                )
-                print(f"New model registered as '{model_name}' in Model Registry")
-            except Exception as e:
-                print(f"Model registration failed: {e}")
+            print("✅ Model trained successfully (skipping artifact logging for now)")
         else:
             print("Using existing model from registry - no new registration needed")
         
