@@ -1,0 +1,40 @@
+{
+  "filename": "000001.jpg",
+  "image_info": {
+    "width": 1920,
+    "height": 1080,
+    "channels": 3
+  },
+  "annotations": [
+    {
+      "class_id": 0,
+      "class_name": "pig",
+      "bbox_yolo": [0.3125, 0.4259, 0.1458, 0.2037],
+      "bbox_absolute": [280, 230, 280, 220],
+      "confidence": 1.0,
+      "difficult": false
+    },
+    {
+      "class_id": 0,
+      "class_name": "pig",
+      "bbox_yolo": [0.6875, 0.5833, 0.1250, 0.1667],
+      "bbox_absolute": [1200, 630, 240, 180],
+      "confidence": 1.0,
+      "difficult": false
+    },
+    {
+      "class_id": 0,
+      "class_name": "pig",
+      "bbox_yolo": [0.1562, 0.6944, 0.1042, 0.1389],
+      "bbox_absolute": [250, 750, 200, 150],
+      "confidence": 1.0,
+      "difficult": true
+    }
+  ],
+  "annotation_info": {
+    "annotator": "user1",
+    "annotation_date": "2025-08-11",
+    "quality_score": 8,
+    "notes": "clear image, good lighting"
+  }
+}
