@@ -1,0 +1,29 @@
+# Prefect deployment configuration
+name: model-evaluation-project
+
+# Work pool configuration
+work_pool:
+  name: default
+  type: process
+
+# Deployments
+deployments:
+  - name: model-evaluation-pipeline
+    version: 1.0.0
+    entrypoint: model_evaluation_flow.py:model_evaluation_pipeline
+    description: "Model evaluation pipeline with MLflow tracking"
+    tags:
+      - ml
+      - evaluation
+      - mlflow
+    parameters:
+      dataset_url: null
+    work_pool:
+      name: default
+    schedule: null  # Can be set to run on schedule if needed
+
+# Build configuration
+build:
+  - prefect.deployments.steps.run_shell_script:
+      script: echo "No build steps required"
+      stream_output: true
