@@ -1,6 +1,0 @@
-artifact_location: file:///home/chopinsmith/workspace-robos/dvc/mlruns/515292436300174365
-creation_time: 1754904156968
-experiment_id: '515292436300174365'
-last_update_time: 1754904156968
-lifecycle_stage: active
-name: model_evaluation_experiment

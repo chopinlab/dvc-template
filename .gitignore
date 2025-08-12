@@ -42,3 +42,7 @@ venv.bak/
 # OS
 .DS_Store
 Thumbs.db
+
+# MLflow - now using PostgreSQL + MinIO, local artifacts not needed
+mlruns/
+mlflow.db
