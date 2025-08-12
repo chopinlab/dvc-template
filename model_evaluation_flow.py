@@ -11,9 +11,33 @@ from prefect import flow, task
 import requests
 from datetime import datetime
 
-# MLflow tracking configuration for Docker server with PostgreSQL
+# MLflow tracking configuration for Docker server with PostgreSQL + MinIO
+import os
 MLFLOW_TRACKING_URI = "http://localhost:5000"
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+
+# MinIO S3 configuration for artifact storage
+os.environ["AWS_ACCESS_KEY_ID"] = "minioadmin"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "minioadmin123" 
+os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://localhost:9000"
+os.environ["AWS_DEFAULT_REGION"] = "us-east-1"  # MinIO 기본 리전
+os.environ["AWS_S3_ENDPOINT_URL"] = "http://localhost:9000"  # 추가 S3 설정
+
+# Fix temporary directory issues for artifact logging
+import tempfile
+os.environ["TMPDIR"] = tempfile.gettempdir()  # 로컬 임시 디렉토리 사용
+
+# Boto3 S3 클라이언트 설정 강제
+import boto3
+from botocore.config import Config
+s3_client = boto3.client(
+    's3',
+    endpoint_url='http://localhost:9000',
+    aws_access_key_id='minioadmin',
+    aws_secret_access_key='minioadmin123',
+    config=Config(signature_version='s3v4'),
+    region_name='us-east-1'
+)
 
 @task
 def load_external_dataset(url: str = None) -> pd.DataFrame:
@@ -136,10 +160,27 @@ def log_to_mlflow(model, metrics: dict, dataset_info: dict, is_newly_trained: bo
         for metric_name, metric_value in metrics.items():
             mlflow.log_metric(metric_name, metric_value)
         
-        # Skip model artifact logging for now due to permission issues
-        # We'll focus on metrics logging with PostgreSQL first
+        # Log model artifacts to MinIO S3 storage
         if is_newly_trained:
-            print("✅ Model trained successfully (skipping artifact logging for now)")
+            try:
+                # Log model to MinIO S3 storage
+                model_info = mlflow.sklearn.log_model(model, "model")
+                
+                # Register model in Model Registry
+                model_name = "RandomForestEvaluationModel"
+                try:
+                    mlflow.register_model(
+                        model_uri=model_info.model_uri,
+                        name=model_name
+                    )
+                    print(f"✅ New model registered as '{model_name}' in Model Registry")
+                except Exception as e:
+                    print(f"Model registration failed: {e}")
+            except Exception as e:
+                import traceback
+                print(f"Model artifact logging failed: {e}")
+                print(f"Full traceback: {traceback.format_exc()}")
+                print("✅ Model trained successfully (artifact logging failed)")
         else:
             print("Using existing model from registry - no new registration needed")
         
