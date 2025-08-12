@@ -23,9 +23,8 @@ os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://localhost:9000"
 os.environ["AWS_DEFAULT_REGION"] = "us-east-1"  # MinIO 기본 리전
 os.environ["AWS_S3_ENDPOINT_URL"] = "http://localhost:9000"  # 추가 S3 설정
 
-# Fix temporary directory issues for artifact logging
-import tempfile
-os.environ["TMPDIR"] = tempfile.gettempdir()  # 로컬 임시 디렉토리 사용
+# S3 artifact storage 강제 설정
+os.environ["MLFLOW_S3_IGNORE_TLS"] = "true"  # HTTPS 검증 비활성화 (개발환경용)
 
 # Boto3 S3 클라이언트 설정 강제
 import boto3
@@ -142,11 +141,16 @@ def evaluate_model(model, X_test, y_test):
 def log_to_mlflow(model, metrics: dict, dataset_info: dict, is_newly_trained: bool = False):
     """Log evaluation results and optionally register new model to MLflow"""
     
-    # Create or get experiment
-    experiment_name = "model_evaluation_experiment"
+    # Create new experiment with S3 artifact location
+    experiment_name = "model_evaluation_s3_experiment"
     try:
-        experiment_id = mlflow.create_experiment(experiment_name)
-    except Exception:
+        experiment_id = mlflow.create_experiment(
+            experiment_name, 
+            artifact_location="s3://mlflow-artifacts/"
+        )
+        print(f"✅ Created new experiment with S3 artifacts: s3://mlflow-artifacts/")
+    except Exception as e:
+        print(f"Experiment creation failed, using existing: {e}")
         experiment_id = mlflow.get_experiment_by_name(experiment_name).experiment_id
     
     with mlflow.start_run(experiment_id=experiment_id, run_name=f"model_evaluation_{datetime.now().strftime('%Y%m%d_%H%M%S')}"):
